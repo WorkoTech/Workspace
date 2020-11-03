@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from api.serializers import FkWorkspaceRelatedField
-from api.models import Invitation, InvitationStatus
+from api.models import Invitation
 
 
 class FullInvitationSerializer(serializers.ModelSerializer):

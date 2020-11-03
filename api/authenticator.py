@@ -1,15 +1,13 @@
-import os
 import jwt
-import requests
 import logging
-logger = logging.getLogger(__name__)
-
-from enum import Enum
 
 from api.models import User
 
-from rest_framework import authentication, exceptions, status
+from rest_framework import status
 from rest_framework.response import Response
+
+
+logger = logging.getLogger(__name__)
 
 
 def authenticate(func):
@@ -22,7 +20,7 @@ def authenticate(func):
             return Response("No authorization header found", status=status.HTTP_401_UNAUTHORIZED)
 
         try:
-            _, raw_jwt = encoded_jwt.split() # Remove "Bearer"
+            _, raw_jwt = encoded_jwt.split()  # Remove "Bearer"
             decoded = jwt.decode(raw_jwt, algorithms=['HS256'], verify=False)
 
             user = User(
@@ -31,7 +29,7 @@ def authenticate(func):
             )
             token = encoded_jwt
 
-        except Exception as e:
+        except Exception:
             logger.warning(f"Unable to decode authentication header {encoded_jwt}")
             return Response("Unable to decode authentication header", status=status.HTTP_403_FORBIDDEN)
 

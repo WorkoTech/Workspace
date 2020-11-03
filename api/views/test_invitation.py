@@ -1,5 +1,4 @@
 import logging
-logger = logging.getLogger(__name__)
 import jwt
 import json
 from unittest import mock
@@ -7,10 +6,6 @@ from unittest import mock
 from rest_framework import status
 from django.test import TestCase, Client
 
-from api.views import (
-    InvitationList,
-    InvitationDetail
-)
 from api.models import (
     Workspace,
     Invitation,
@@ -20,6 +15,9 @@ from api.models import (
 from api.externals.iam import ExternalUsers, ExternalWorkspacePermission
 from api.externals.sendgrid import ExternalMail
 from api.externals.notifier import ExternalNotify
+
+
+logger = logging.getLogger(__name__)
 
 
 class TestInvitationList(TestCase):
@@ -43,8 +41,17 @@ class TestInvitationList(TestCase):
             Workspace.objects.create(name='Workspace 2'),
         ]
         self.invitations = [
-            Invitation.objects.create(workspace=self.workspaces[0], sender="email@example.com", user_id=1),
-            Invitation.objects.create(workspace=self.workspaces[1], sender="email@example.com", user_id=1, status=InvitationStatus.ACCEPTED.name)
+            Invitation.objects.create(
+                workspace=self.workspaces[0],
+                sender="email@example.com",
+                user_id=1
+            ),
+            Invitation.objects.create(
+                workspace=self.workspaces[1],
+                sender="email@example.com",
+                user_id=1,
+                status=InvitationStatus.ACCEPTED.name
+            )
         ]
 
     def tearDown(self):
@@ -94,11 +101,11 @@ class TestInvitationList(TestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
         # Assert invitation details
-        self.assertEqual(res.json().get('id'), Invitation.objects.last().id) # 3 because of the two invitation we create in setUp
-        self.assertEqual(res.json().get('status'), 'PENDING') # Must always be PENDING
-        self.assertEqual(res.json().get('user_id'), 3) # user id from IAM mock
-        self.assertEqual(res.json().get('workspace'), Workspace.objects.first().id) # workspace from request
-        self.assertEqual(res.json().get('sender'), 'email@example.com') # from token defined in setUp
+        self.assertEqual(res.json().get('id'), Invitation.objects.last().id)  # 3 cause of the 2 invitation we create in setUp
+        self.assertEqual(res.json().get('status'), 'PENDING')  # Must always be PENDING
+        self.assertEqual(res.json().get('user_id'), 3)  # user id from IAM mock
+        self.assertEqual(res.json().get('workspace'), Workspace.objects.first().id)  # workspace from request
+        self.assertEqual(res.json().get('sender'), 'email@example.com')  # from token defined in setUp
 
     @mock.patch.object(ExternalUsers, 'get_by_email', return_value=User(1, 'invited@example.com'))
     def test_create_user_invite_himself(self, mock_user):
@@ -140,7 +147,7 @@ class TestInvitationList(TestCase):
             },
             **self.headers
         )
-        mock_email.assert_called();
+        mock_email.assert_called()
 
     @mock.patch.object(ExternalUsers, 'get_by_email', return_value=User(3, 'invited@example.com'))
     @mock.patch.object(ExternalNotify, 'send')
@@ -153,7 +160,7 @@ class TestInvitationList(TestCase):
             },
             **self.headers
         )
-        mock_notify.assert_called();
+        mock_notify.assert_called()
 
 
 class TestInvitationDetail(TestCase):
@@ -187,11 +194,11 @@ class TestInvitationDetail(TestCase):
         # Assert status code
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         # Assert invitation details
-        self.assertEqual(res.json().get('id'), self.invitation.id) # 3 because of the two invitation we create in setUp
-        self.assertEqual(res.json().get('status'), 'PENDING') # Must always be PENDING
-        self.assertEqual(res.json().get('user_id'), 1) # user id from IAM mock
-        self.assertEqual(res.json().get('workspace').get('id'), self.workspace.id) # workspace from request
-        self.assertEqual(res.json().get('sender'), 'email@example.com') # from token defined in setUp
+        self.assertEqual(res.json().get('id'), self.invitation.id)  # 3 because of the two invitation we create in setUp
+        self.assertEqual(res.json().get('status'), 'PENDING')  # Must always be PENDING
+        self.assertEqual(res.json().get('user_id'), 1)  # user id from IAM mock
+        self.assertEqual(res.json().get('workspace').get('id'), self.workspace.id)  # workspace from request
+        self.assertEqual(res.json().get('sender'), 'email@example.com')  # from token defined in setUp
 
     def test_retrieve_detail_unauthorized(self):
         res = self.client.get(
@@ -215,18 +222,18 @@ class TestInvitationDetail(TestCase):
     def test_update_success(self, mock):
         res = self.client.put(
             f'/invitation/{self.invitation.id}/',
-            { 'status': 'ACCEPTED' },
+            {'status': 'ACCEPTED'},
             content_type="application/json",
             **self.headers
         )
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.json(), { 'status': 'ACCEPTED' })
+        self.assertEqual(res.json(), {'status': 'ACCEPTED'})
 
     def test_user_not_invited_update(self):
         res = self.client.put(
             f'/invitation/{self.unauth_invitation.id}/',
-            { 'status': 'ACCEPTED' },
+            {'status': 'ACCEPTED'},
             **self.headers
         )
 
@@ -245,7 +252,7 @@ class TestInvitationDetail(TestCase):
 
         res = self.client.put(
             f'/invitation/{invitation.id}/',
-            { 'status': 'DELETED' },
+            {'status': 'DELETED'},
             **self.headers
         )
 
@@ -255,7 +262,7 @@ class TestInvitationDetail(TestCase):
     def test_update_to_pending(self):
         res = self.client.put(
             f'/invitation/{self.invitation.id}/',
-            { 'status': 'PENDING' },
+            {'status':'PENDING'},
             content_type="application/json",
             **self.headers
         )
@@ -267,7 +274,7 @@ class TestInvitationDetail(TestCase):
     def test_update_accepted_workspace_permissions_fail(self, mock):
         res = self.client.put(
             f'/invitation/{self.invitation.id}/',
-            { 'status': 'ACCEPTED' },
+            {'status':'ACCEPTED'},
             content_type="application/json",
             **self.headers
         )
@@ -278,7 +285,7 @@ class TestInvitationDetail(TestCase):
     def test_update_malformed_request(self):
         res = self.client.put(
             f'/invitation/{self.invitation.id}/',
-            { 'status': 'NOT_VALID_STATUS' },
+            {'status':'NOT_VALID_STATUS'},
             content_type="application/json",
             **self.headers
         )

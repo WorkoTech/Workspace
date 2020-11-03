@@ -1,5 +1,4 @@
 import logging
-logger = logging.getLogger(__name__)
 
 from django.http import Http404
 from rest_framework import status
@@ -24,6 +23,9 @@ from api.models import (
     Invitation,
     WorkspacePermission
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class WorkspaceList(APIView):
@@ -76,7 +78,7 @@ class WorkspaceList(APIView):
             )
             if not perm_set_sucess:
                 logger.info("Error while setting workspace permissions")
-                w = Workspace.objects.get(pk=workspace_id).hard_delete()
+                Workspace.objects.get(pk=workspace_id).hard_delete()
 
                 return Response(
                     "Unable to set workspace permission",
@@ -106,7 +108,7 @@ class WorkspaceDetail(APIView):
         Retrieve a specific workspace with users information filled
         """
         permission = ExternalWorkspacePermission.get(token, pk)
-        if permission == None:
+        if permission is None:
             return Response("Unable to retrieve workspace permission", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         if permission == WorkspacePermission.NONE:
             return Response("Permission denied", status=status.HTTP_403_FORBIDDEN)
@@ -131,7 +133,7 @@ class WorkspaceDetail(APIView):
             )
 
         workspace = self.get_object(pk)
-        old_workspace_users = workspace.users.copy() # Used to know if user has been deleted
+        old_workspace_users = workspace.users.copy()  # Used to know if user has been deleted
 
         serializer = EditableWorkspaceSerializer(workspace, data=request.data)
         if serializer.is_valid():
@@ -170,7 +172,7 @@ class WorkspaceDetail(APIView):
         permission = ExternalWorkspacePermission.get(token, pk)
 
         # An error occured while getting permissions
-        if permission == None:
+        if permission is None:
             logger.error(f"Unable to retrieve permission for user {user.id} on workspace {pk}")
             return Response(
                 "Unable to retrieve user workspace permissions",
