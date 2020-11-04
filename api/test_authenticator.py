@@ -1,13 +1,11 @@
 import jwt
 import logging
-logger = logging.getLogger(__name__)
 
 from django.test import TestCase, Client
 from rest_framework import status
-from rest_framework.response import Response
 
-from api.authenticator import authenticate
-from api.views import WorkspaceList
+
+logger = logging.getLogger(__name__)
 
 
 class TestAuthenticator(TestCase):
@@ -39,7 +37,6 @@ class TestAuthenticator(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(res.content, b'"Unable to decode authentication header"')
-
 
     def test_should_call_view_method(self):
         # Mock the view to assert that it's called

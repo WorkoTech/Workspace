@@ -11,6 +11,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:12
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: workspace
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
     steps:
     - uses: actions/checkout@v2
  
@@ -30,8 +41,29 @@ jobs:
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-        
+        flake8 . --count --max-line-length=127 --exit-zero --show-source --statistics
+
     - name: Test with pytest
       run: |
-        pytest
+        python3 manage.py test
+  
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Build docker image
+      run: |
+         docker build -t worko/workspace:${{ github.sha }} .
+         
+    - name: Google Cloud Countainer Registry
+      uses: mattes/gce-docker-push-action@v1.0.0
+      with:
+        # Contents of a Service Account JSON Key
+        creds: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        # Source image name
+        src: worko/workspace:${{ github.sha }}
+        # Destination image name
+        dst: gcr.io/euphoric-stone-294521/workspace:${{ github.sha }}
